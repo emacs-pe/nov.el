@@ -1,0 +1,64 @@
+* TODO [Enhancement] Support lack of Imagemagick type in upcoming Emacs release
+
+Current strategy for viewing images:
+
+- Insert alt text in textual Emacs
+- If Imagemagick is available, insert scaled image
+- Let =create-image= figure out an available image type
+- If that fails insert alt text instead of image
+
+The upcoming Emacs release disables Imagemagick support by default for
+security reasons and supports native image transformations.  It's
+possible to test for the latter with the following snippet:
+
+#+BEGIN_SRC emacs-lisp
+(and (fboundp 'image-transforms-p) (memq 'scale (image-transforms-p)))
+#+END_SRC
+
+The above strategy should be reworked to scale the image if possible
+(preferring native, then Imagemagick), then fall back to native
+formats, then plain text.
+
+* TODO [Enhancement] Handle displays not capable of displaying images
+
+Currently this is tested with =display-graphic-p= instead of
+=display-images-p=.  Another thing to consider is whether an image
+created with =(insert-image ... ALT)= works better than inserting
+text.
+
+* TODO [Bug] SVGs containing images are not rendered correctly
+
+This seems to mostly happen with librsvg as it fails to resolve these
+relative to the current directory.  Might require Emacs patches.
+
+An alternative "solution" is to edit SVGs to not contain relative
+paths after unzipping...
+
+* TODO [Enhancement] Remember document position for navigation with t/n/p
+
+Much like with remembering the last viewed position per file, you
+could remember it per document.  It doesn't make sense for navigation
+with =SPC= and =S-SPC= to do this though.
+
+* TODO [Feature] Support FB2 format
+
+This basically amounts to a full rewrite using generic functions.  It
+doesn't help the format is used for Russian literature mostly and is
+documented in terms of a few XML files.
+
+http://gribuser.ru/xml/fictionbook/index.html.en
+
+* TODO [Feature] Info-like continuous search
+
+There are a few approaches to this, none of them strike me as good
+enough to pursue:
+
+- Using grep to do fuzzy matching, then jumping to the "right"
+  location.  Tricky because there is no correspondance between
+  rendered buffer and HTML source.  Rejected on emacs-devel:
+  https://lists.gnu.org/archive/html/emacs-devel/2020-02/msg00096.html
+- Using =dom-texts= on the HTML parse trees, then jumping to the
+  "right" location using fuzzy matching of the text.
+- Using isearch in one document, then loading up the adjacent one if
+  needed.  Slow unless caching is used and implementing that is
+  another can of worms.
