@@ -729,7 +729,8 @@ Saving is only done if `nov-save-place-file' is set."
     (nov-goto-document index)
     (setq nov-history (cdr nov-history))
     (setq nov-history-forward history-forward)
-    (goto-char opoint)))
+    (goto-char opoint)
+    (recenter (1- (max 1 scroll-margin)))))
 
 (defun nov-history-forward ()
   "Go forward in the history of visited documents."
@@ -740,7 +741,8 @@ Saving is only done if `nov-save-place-file' is set."
          ((index opoint) (car nov-history-forward)))
     (nov-goto-document index)
     (setq nov-history-forward history-forward)
-    (goto-char opoint)))
+    (goto-char opoint)
+    (recenter (1- (max 1 scroll-margin)))))
 
 ;;;###autoload
 (define-derived-mode nov-mode special-mode "EPUB"
