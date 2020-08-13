@@ -439,30 +439,30 @@ Each alist item consists of the identifier and full path."
   (setq url (url-generic-parse-url url))
   (mapcar 'nov-urldecode (list (url-filename url) (url-target url))))
 
+;; adapted from `shr-rescale-image'
 (defun nov-insert-image (path alt)
   "Insert an image for PATH at point, falling back to ALT.
 This function honors `shr-max-image-proportion' if possible."
-  (cond
-   ((not (display-graphic-p))
-    (insert alt))
-   ;; TODO: add native resizing support once it's official
-   ((fboundp 'imagemagick-types)
-    ;; adapted from `shr-rescale-image'
-    (-let [(x1 y1 x2 y2) (window-inside-pixel-edges
-                          (get-buffer-window (current-buffer)))]
-      (insert-image
-       (create-image path 'imagemagick nil
-                     :ascent 100
-                     :max-width (truncate (* shr-max-image-proportion
-                                             (- x2 x1)))
-                     :max-height (truncate (* shr-max-image-proportion
-                                              (- y2 y1)))))))
-   (t
-    ;; `create-image' errors out for unsupported image types
-    (let ((image (ignore-errors (create-image path nil nil :ascent 100))))
-      (if image
-          (insert-image image)
-        (insert alt))))))
+  (let ((type (if (or (and (fboundp 'image-transforms-p) (image-transforms-p))
+                      (not (fboundp 'imagemagick-types)))
+                  nil
+                'imagemagick)))
+    (if (not (display-graphic-p))
+        (insert alt)
+      (-let* (((x1 y1 x2 y2) (window-inside-pixel-edges
+                              (get-buffer-window (current-buffer))))
+              (image
+               ;; `create-image' errors out for unsupported image types
+               (ignore-errors
+                 (create-image path type nil
+                               :ascent 100
+                               :max-width (truncate (* shr-max-image-proportion
+                                                       (- x2 x1)))
+                               :max-height (truncate (* shr-max-image-proportion
+                                                        (- y2 y1)))))))
+        (if image
+            (insert-image image)
+          (insert alt))))))
 
 (defvar nov-original-shr-tag-img-function
   (symbol-function 'shr-tag-img))
