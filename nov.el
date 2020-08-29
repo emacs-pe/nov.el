@@ -857,10 +857,15 @@ See also `nov-bookmark-make-record'."
      :link (format "nov:%s::%d:%d" nov-file-name nov-documents-index (point))
      :description (format "EPUB file at %s" nov-file-name))))
 
-(org-link-set-parameters
- "nov"
- :follow 'nov-org-link-follow
- :store 'nov-org-link-store)
+(cond
+ ((version< org-version "9.0")
+  (org-add-link-type "nov" 'nov-org-link-follow)
+  (add-hook 'org-store-link-functions 'nov-org-link-store))
+ (t
+  (org-link-set-parameters
+   "nov"
+   :follow 'nov-org-link-follow
+   :store 'nov-org-link-store)))
 
 
 ;;; Imenu interop
