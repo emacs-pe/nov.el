@@ -1,24 +1,3 @@
-* TODO [Enhancement] Support lack of Imagemagick type in upcoming Emacs release
-
-Current strategy for viewing images:
-
-- Insert alt text in textual Emacs
-- If Imagemagick is available, insert scaled image
-- Let =create-image= figure out an available image type
-- If that fails insert alt text instead of image
-
-The upcoming Emacs release disables Imagemagick support by default for
-security reasons and supports native image transformations.  It's
-possible to test for the latter with the following snippet:
-
-#+BEGIN_SRC emacs-lisp
-(and (fboundp 'image-transforms-p) (memq 'scale (image-transforms-p)))
-#+END_SRC
-
-The above strategy should be reworked to scale the image if possible
-(preferring native, then Imagemagick), then fall back to native
-formats, then plain text.
-
 * TODO [Enhancement] Handle displays not capable of displaying images
 
 Currently this is tested with =display-graphic-p= instead of
@@ -34,11 +13,23 @@ relative to the current directory.  Might require Emacs patches.
 An alternative "solution" is to edit SVGs to not contain relative
 paths after unzipping...
 
+* TODO [Enhancement] Remember document position after redrawing with g
+
+https://github.com/emacs-evil/evil-collection/blob/master/modes/nov/evil-collection-nov.el#L41
+
+Ultimately this is a problem of exposing the render function as
+interactive command.  This turned out to be a mistake, but can be
+fixed by renaming it to a double-dashed version, marking the original
+as obsolete and creating a new command that remembers the position.
+The new function could then restore position and maybe even reuse
+
 * TODO [Enhancement] Remember document position for navigation with t/n/p
 
 Much like with remembering the last viewed position per file, you
 could remember it per document.  It doesn't make sense for navigation
-with =SPC= and =S-SPC= to do this though.
+with =SPC= and =S-SPC= to do this though, so an override is required
+(like an optional parameter or explicitly setting the position to
+=(point-min)= when using =SPC=).
 
 * TODO [Feature] Support FB2 format
 
