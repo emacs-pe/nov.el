@@ -46,6 +46,7 @@
 (require 'cl-lib)
 (require 'dash)
 (require 'esxml-query)
+(require 'image)
 (require 'shr)
 (require 'url-parse)
 
