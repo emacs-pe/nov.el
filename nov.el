@@ -183,8 +183,8 @@ Each element of the stack is a list (NODEINDEX BUFFERPOS).")
 (defun nov-unzip-epub (directory filename)
   "Extract FILENAME into DIRECTORY.
 Unnecessary nesting is removed with `nov-unnest-directory'."
-  (let ((status (call-process nov-unzip-program nil nil t
-                              "-d" directory filename))
+  (let ((status (call-process nov-unzip-program nil "*nov unzip*" t
+                              "-od" directory filename))
         child)
     (while (setq child (nov-contains-nested-directory-p directory))
       (nov-unnest-directory directory child))
@@ -758,9 +758,10 @@ Saving is only done if `nov-save-place-file' is set."
     (when (not (integerp exit-code))
       (nov-clean-up)
       (error "EPUB extraction aborted by signal %s" exit-code))
-    (when (not (zerop exit-code))
+    (when (> exit-code 1) ; exit code 1 is most likely a warning
       (nov-clean-up)
-      (error "EPUB extraction failed with exit code %d" exit-code)))
+      (error "EPUB extraction failed with exit code %d (see *nov unzip* buffer)"
+             exit-code)))
   (when (not (nov-epub-valid-p nov-temp-dir))
     (nov-clean-up)
     (error "Invalid EPUB file"))
