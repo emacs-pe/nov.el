@@ -49,6 +49,7 @@
 (require 'image)
 (require 'shr)
 (require 'url-parse)
+(require 'xml)
 
 (require 'bookmark)
 (require 'imenu)
@@ -366,7 +367,9 @@ Each alist item consists of the identifier and full path."
              (label (car (esxml-node-children label-node))))
         (when (not href)
           (error "Navigation point is missing href attribute"))
-        (let ((link (format "<a href=\"%s\">%s</a>" href (or label href))))
+        (let ((link (format "<a href=\"%s\">%s</a>"
+                            (xml-escape-string href)
+                            (xml-escape-string (or label href)))))
           (if children
               (progn
                 (insert (format "<li>\n%s\n<ol>\n" link))
