@@ -856,20 +856,30 @@ See also `nov-bookmark-make-record'."
   (when (and (eq major-mode 'nov-mode) nov-file-name)
     (when (not (integerp nov-documents-index))
       (setq nov-documents-index 0))
-    (org-store-link-props
-     :type "nov"
-     :link (format "nov:%s::%d:%d" nov-file-name nov-documents-index (point))
-     :description (format "EPUB file at %s" nov-file-name))))
+    (let ((org-store-props-function
+           (if (version< org-version "9.3")
+               'org-store-link-props
+             'org-link-store-props))
+          (link (format "nov:%s::%d:%d"
+                        nov-file-name
+                        nov-documents-index
+                        (point)))
+          (description (format "EPUB file at %s" nov-file-name)))
+      (funcall org-store-props-function
+               :type "nov"
+               :link link
+               :description description))))
 
-(cond
- ((version< org-version "9.0")
-  (org-add-link-type "nov" 'nov-org-link-follow)
-  (add-hook 'org-store-link-functions 'nov-org-link-store))
- (t
-  (org-link-set-parameters
-   "nov"
-   :follow 'nov-org-link-follow
-   :store 'nov-org-link-store)))
+(with-suppressed-warnings ((obsolete org-add-link-type))
+  (cond
+   ((version< org-version "9.0")
+    (org-add-link-type "nov" 'nov-org-link-follow)
+    (add-hook 'org-store-link-functions 'nov-org-link-store))
+   (t
+    (org-link-set-parameters
+     "nov"
+     :follow 'nov-org-link-follow
+     :store 'nov-org-link-store))))
 
 
 ;;; Imenu interop
