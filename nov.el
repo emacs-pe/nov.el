@@ -5,7 +5,7 @@
 ;; Author: Vasilij Schneidermann <mail@vasilij.de>
 ;; URL: https://depp.brause.cc/nov.el
 ;; Version: 0.3.0
-;; Package-Requires: ((dash "2.12.0") (esxml "0.3.3") (emacs "24.4"))
+;; Package-Requires: ((dash "2.12.0") (esxml "0.3.5") (emacs "24.4"))
 ;; Keywords: hypermedia, multimedia, epub
 
 ;; This file is NOT part of GNU Emacs.
@@ -266,7 +266,7 @@ the specific type of unique identifier."
   "Return the the unique identifier for CONTENT."
   (let* ((name (nov-content-unique-identifier-name content))
          (selector (format "package>metadata>identifier[id='%s']"
-                           (regexp-quote name)))
+                           (esxml-query-css-escape name)))
          (id (car (esxml-node-children (esxml-query selector content)))))
     (when (not id)
       (error "Unique identifier not found by its name: %s" name))
