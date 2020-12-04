@@ -13,6 +13,9 @@ relative to the current directory.  Might require Emacs patches.
 An alternative "solution" is to edit SVGs to not contain relative
 paths after unzipping...
 
+Update: Someone on emacs-devel posted a patch for the former strategy:
+https://lists.gnu.org/archive/html/emacs-devel/2020-12/msg00119.html
+
 * TODO [Enhancement] Remember document position after redrawing with g
 
 https://github.com/emacs-evil/evil-collection/blob/master/modes/nov/evil-collection-nov.el#L41
