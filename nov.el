@@ -870,16 +870,15 @@ See also `nov-bookmark-make-record'."
                :link link
                :description description))))
 
-(with-suppressed-warnings ((obsolete org-add-link-type))
-  (cond
-   ((version< org-version "9.0")
-    (org-add-link-type "nov" 'nov-org-link-follow)
-    (add-hook 'org-store-link-functions 'nov-org-link-store))
-   (t
-    (org-link-set-parameters
-     "nov"
-     :follow 'nov-org-link-follow
-     :store 'nov-org-link-store))))
+(cond
+ ((version< org-version "9.0")
+  (org-add-link-type "nov" 'nov-org-link-follow)
+  (add-hook 'org-store-link-functions 'nov-org-link-store))
+ (t
+  (org-link-set-parameters
+   "nov"
+   :follow 'nov-org-link-follow
+   :store 'nov-org-link-store)))
 
 
 ;;; Imenu interop
