@@ -858,9 +858,9 @@ See also `nov-bookmark-make-record'."
     (when (not (integerp nov-documents-index))
       (setq nov-documents-index 0))
     (let ((org-store-props-function
-           (if (version< org-version "9.3")
-               'org-store-link-props
-             'org-link-store-props))
+           (if (fboundp 'org-link-store-props)
+               'org-link-store-props
+             'org-store-link-props))
           (link (format "nov:%s::%d:%d"
                         nov-file-name
                         nov-documents-index
@@ -872,14 +872,14 @@ See also `nov-bookmark-make-record'."
                :description description))))
 
 (cond
- ((version< org-version "9.0")
-  (org-add-link-type "nov" 'nov-org-link-follow)
-  (add-hook 'org-store-link-functions 'nov-org-link-store))
- (t
+ ((fboundp 'org-link-set-parameters)
   (org-link-set-parameters
    "nov"
    :follow 'nov-org-link-follow
-   :store 'nov-org-link-store)))
+   :store 'nov-org-link-store))
+ ((fboundp 'org-add-link-type)
+  (org-add-link-type "nov" 'nov-org-link-follow)
+  (add-hook 'org-store-link-functions 'nov-org-link-store)))
 
 
 ;;; Imenu interop
