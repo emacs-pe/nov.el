@@ -830,6 +830,7 @@ Saving is only done if `nov-save-place-file' is set."
           (position . ,(point))
           (handler . nov-bookmark-jump-handler))))
 
+;;;###autoload
 (defun nov-bookmark-jump-handler (bmk)
   "The bookmark handler-function interface for bookmark BMK.
 
