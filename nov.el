@@ -4,8 +4,8 @@
 
 ;; Author: Vasilij Schneidermann <mail@vasilij.de>
 ;; URL: https://depp.brause.cc/nov.el
-;; Version: 0.3.3
-;; Package-Requires: ((dash "2.12.0") (esxml "0.3.5") (emacs "24.4"))
+;; Version: 0.3.4
+;; Package-Requires: ((dash "2.12.0") (esxml "0.3.6") (emacs "24.4"))
 ;; Keywords: hypermedia, multimedia, epub
 
 ;; This file is NOT part of GNU Emacs.
