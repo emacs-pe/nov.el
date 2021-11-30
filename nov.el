@@ -330,7 +330,7 @@ Each alist item consists of the identifier and full path."
       (cons toc-file files))))
 
 (defun nov--content-epub3-files (content manifest files)
-  (let* ((node (esxml-query "package>manifest>item[properties=nav]" content))
+  (let* ((node (esxml-query "package>manifest>item[properties~=nav]" content))
          (id (esxml-node-attribute 'id node)))
     (when (not id)
       (error "EPUB 3 <nav> ID not found"))
