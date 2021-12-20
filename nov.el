@@ -402,10 +402,6 @@ Each alist item consists of the identifier and full path."
     (define-key map (kbd "t") 'nov-goto-toc)
     (define-key map (kbd "l") 'nov-history-back)
     (define-key map (kbd "r") 'nov-history-forward)
-    (define-key map (kbd "RET") 'nov-browse-url)
-    (define-key map (kbd "c") 'nov-copy-url)
-    (define-key map (kbd "<follow-link>") 'mouse-face)
-    (define-key map (kbd "<mouse-2>") 'nov-browse-url)
     (define-key map (kbd "TAB") 'shr-next-link)
     (define-key map (kbd "M-TAB") 'shr-previous-link)
     (define-key map (kbd "<backtab>") 'shr-previous-link)
@@ -414,6 +410,14 @@ Each alist item consists of the identifier and full path."
     (define-key map (kbd "DEL") 'nov-scroll-down)
     (define-key map (kbd "<home>") 'beginning-of-buffer)
     (define-key map (kbd "<end>") 'end-of-buffer)
+    map))
+
+(defvar nov-button-map
+  (let ((map (make-sparse-keymap)))
+    (set-keymap-parent map shr-map)
+    (define-key map (kbd "RET") 'nov-browse-url)
+    (define-key map (kbd "<mouse-2>") 'nov-browse-url)
+    (define-key map (kbd "c") 'nov-copy-url)
     map))
 
 (defun nov-clean-up ()
@@ -509,7 +513,7 @@ chapter title."
   "Render HTML in current buffer with shr."
   (run-hooks 'nov-pre-html-render-hook)
   (let (;; HACK: make buttons use our own commands
-        (shr-map nov-mode-map)
+        (shr-map nov-button-map)
         (shr-external-rendering-functions nov-shr-rendering-functions)
         (shr-use-fonts nov-variable-pitch))
     ;; HACK: `shr-external-rendering-functions' doesn't cover
