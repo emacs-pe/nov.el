@@ -52,6 +52,7 @@
 (require 'xml)
 
 (require 'bookmark)
+(require 'easymenu)
 (require 'imenu)
 (require 'org)
 (require 'recentf)
@@ -419,6 +420,35 @@ Each alist item consists of the identifier and full path."
     (define-key map (kbd "<mouse-2>") 'nov-browse-url)
     (define-key map (kbd "c") 'nov-copy-url)
     map))
+
+(easy-menu-define nov-mode-menu nov-mode-map "Menu for nov-mode"
+  '("EPUB"
+    ["Next" nov-next-document
+     :help "Go to the next document"]
+    ["Previous" nov-previous-document
+     :help "Go to the previous document"]
+    ["Backward" nov-history-back
+     :help "Go back in the history to the last visited document"]
+    ["Forward" nov-history-forward
+     :help "Go forward in the history of visited documents"]
+    ["Next Link" shr-next-link
+     :help "Go to the next link"]
+    ["Previous Link" shr-previous-link
+     :keys "M-TAB"
+     :help "Go to the previous link"]
+    ["Table of Contents" nov-goto-toc
+     :help "Display the table of contents"]
+    ["Redisplay" nov-render-document
+     :help "Redisplay the document"]
+    "---"
+    ["View Metadata" nov-display-metadata
+     :help "View the metadata of the EPUB document"]
+    ["View HTML Source" nov-view-source
+     :help "View the HTML source of the current document in a new buffer"]
+    ["View OPF Source" nov-view-content-source
+     :help "View the OPF source of the EPUB document in a new buffer"]
+    ["View as Archive" nov-reopen-as-archive
+     :help "Reopen the EPUB document as an archive"]))
 
 (defun nov-clean-up ()
   "Delete temporary files of the current EPUB buffer."
