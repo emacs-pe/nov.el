@@ -414,7 +414,7 @@ Each alist item consists of the identifier and full path."
     map))
 
 (defvar nov-button-map
-  (let ((map (make-sparse-keymap)))
+  (let ((map (copy-keymap nov-mode-map)))
     (set-keymap-parent map shr-map)
     (define-key map (kbd "RET") 'nov-browse-url)
     (define-key map (kbd "<mouse-2>") 'nov-browse-url)
