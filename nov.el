@@ -694,17 +694,22 @@ the HTML is rendered with `nov-render-html-function'."
         (when (not match)
           (error "Couldn't locate document"))
         (setq index match)))
-    (let ((shr-target-id target)) ; shr.el API for Emacs 27.1 and older
+    ;; HACK: this binding is only need for Emacs 27.1 and older, as of
+    ;; Emacs 28.1, shr.el always adds the shr-target-id property
+    (let ((shr-target-id target))
       (nov-goto-document (or index nov-documents-index))))
   (when target
     (let ((pos (point-min))
           done)
       (while (and (not done)
                   (setq pos (next-single-property-change pos 'shr-target-id)))
-        (when (equal (get-text-property pos 'shr-target-id) target)
-          (goto-char pos)
-          (recenter (1- (max 1 scroll-margin)))
-          (setq done t)))
+        (let ((property (get-text-property pos 'shr-target-id)))
+          (when (or (equal property target)
+                    ;; NOTE: as of Emacs 28.1 this may be a list of targets
+                    (and (consp property) (member target property)))
+            (goto-char pos)
+            (recenter (1- (max 1 scroll-margin)))
+            (setq done t))))
       (when (not done)
         (error "Couldn't locate target")))))
 
