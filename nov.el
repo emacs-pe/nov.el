@@ -800,6 +800,8 @@ Saving is only done if `nov-save-place-file' is set."
   (add-hook 'change-major-mode-hook 'nov-clean-up nil t)
   (when (not buffer-file-name)
     (error "EPUB must be associated with file"))
+  (when (not nov-unzip-program)
+    (error "unzip executable not found, customize `nov-unzip-program'"))
   (setq nov-temp-dir (make-temp-file "nov-" t ".epub"))
   (let ((exit-code (nov-unzip-epub nov-temp-dir buffer-file-name)))
     (when (not (integerp exit-code))
