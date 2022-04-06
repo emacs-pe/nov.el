@@ -5,7 +5,7 @@
 ;; Author: Vasilij Schneidermann <mail@vasilij.de>
 ;; URL: https://depp.brause.cc/nov.el
 ;; Version: 0.3.4
-;; Package-Requires: ((dash "2.12.0") (esxml "0.3.6") (emacs "25.1"))
+;; Package-Requires: ((esxml "0.3.6") (emacs "25.1"))
 ;; Keywords: hypermedia, multimedia, epub
 
 ;; This file is NOT part of GNU Emacs.
@@ -45,9 +45,9 @@
 
 (require 'cl-lib)
 (require 'dom)
-(require 'dash)
 (require 'esxml-query)
 (require 'image)
+(require 'seq)
 (require 'shr)
 (require 'url-parse)
 (require 'xml)
@@ -152,8 +152,8 @@ Each element of the stack is a list (NODEINDEX BUFFERPOS).")
 
 (defun nov-directory-files (directory)
   "Returns a list of files in DIRECTORY except for . and .."
-  (--remove (string-match-p "/\\.\\(?:\\.\\)?\\'" it)
-            (directory-files directory t)))
+  (seq-remove (lambda (file) (string-match-p "/\\.\\(?:\\.\\)?\\'" file))
+              (directory-files directory t)))
 
 (defun nov-contains-nested-directory-p (directory)
   "Non-nil if DIRECTORY contains exactly one directory."
@@ -171,9 +171,9 @@ Each element of the stack is a list (NODEINDEX BUFFERPOS).")
   (delete-directory child))
 
 (defun nov--fix-permissions (file-or-directory mode)
-  (->> (file-modes file-or-directory)
-       (file-modes-symbolic-to-number mode)
-       (set-file-modes file-or-directory)))
+  (let* ((modes (file-modes file-or-directory))
+         (fixed-mode (file-modes-symbolic-to-number mode modes)))
+    (set-file-modes file-or-directory fixed-mode)))
 
 (defun nov-fix-permissions (directory)
   "Iterate recursively through DIRECTORY to fix its files."
@@ -309,7 +309,8 @@ Required keys are 'identifier and everything in
   "Extract an alist of manifest files for CONTENT in DIRECTORY.
 Each alist item consists of the identifier and full path."
   (mapcar (lambda (node)
-            (-let [(&alist 'id id 'href href) (dom-attributes node)]
+            (let ((id (dom-attr node 'id))
+                  (href (dom-attr node 'href)))
               (cons (intern id)
                     (nov-make-path directory (nov-urldecode href)))))
           (esxml-query-all "package>manifest>item" content)))
@@ -339,7 +340,7 @@ Each alist item consists of the identifier and full path."
     (let ((toc-file (assq nov-toc-id manifest)))
       (when (not toc-file)
         (error "EPUB 3 <nav> file not found"))
-      (setq files (--remove (eq (car it) nov-toc-id) files))
+      (setq files (seq-remove (lambda (item) (eq (car item) nov-toc-id)) files))
       (cons toc-file files))))
 
 (defun nov-content-files (directory content)
@@ -354,7 +355,8 @@ Each alist item consists of the identifier and full path."
 
 (defun nov--walk-ncx-node (node)
   (let ((tag (dom-tag node))
-        (children (--filter (eq (dom-tag it) 'navPoint) (dom-children node))))
+        (children (seq-filter (lambda (child) (eq (dom-tag child) 'navPoint))
+                              (dom-children node))))
     (cond
      ((eq tag 'navMap)
       (insert "<ol>\n")
@@ -486,9 +488,9 @@ This function honors `shr-max-image-proportion' if possible."
                 'imagemagick)))
     (if (not (display-graphic-p))
         (insert alt)
-      (-let* (((x1 y1 x2 y2) (window-inside-pixel-edges
-                              (get-buffer-window (current-buffer))))
-              (image
+      (seq-let (x1 y1 x2 y2) (window-inside-pixel-edges
+                              (get-buffer-window (current-buffer)))
+        (let ((image
                ;; `create-image' errors out for unsupported image types
                (ignore-errors
                  (create-image path type nil
@@ -497,9 +499,9 @@ This function honors `shr-max-image-proportion' if possible."
                                                        (- x2 x1)))
                                :max-height (truncate (* shr-max-image-proportion
                                                         (- y2 y1)))))))
-        (if image
-            (insert-image image)
-          (insert alt))))))
+          (if image
+              (insert-image image)
+            (insert alt)))))))
 
 (defvar nov-original-shr-tag-img-function
   (symbol-function 'shr-tag-img))
@@ -561,27 +563,27 @@ If the document path refers to an image (as determined by
 `image-type-file-name-regexps'), an image is inserted, otherwise
 the HTML is rendered with `nov-render-html-function'."
   (interactive)
-  (-let* (((id . path) (aref nov-documents nov-documents-index))
-          ;; HACK: this should be looked up in the manifest
-          (imagep (--find (string-match-p (car it) path)
-                          image-type-file-name-regexps))
+  (seq-let (id &rest path) (aref nov-documents nov-documents-index)
+    (let (;; HACK: this should be looked up in the manifest
+          (imagep (seq-find (lambda (item) (string-match-p (car item) path))
+                            image-type-file-name-regexps))
           ;; NOTE: allows resolving image references correctly
           (default-directory (file-name-directory path))
-          (buffer-read-only nil))
-    (erase-buffer)
+          buffer-read-only)
+      (erase-buffer)
 
-    (cond
-     (imagep
-      (nov-insert-image path ""))
-     ((and (version< nov-epub-version "3.0")
-           (eq id nov-toc-id))
-      (insert (nov-ncx-to-html path)))
-     (t
-      (insert (nov-slurp path))))
+      (cond
+       (imagep
+        (nov-insert-image path ""))
+       ((and (version< nov-epub-version "3.0")
+             (eq id nov-toc-id))
+        (insert (nov-ncx-to-html path)))
+       (t
+        (insert (nov-slurp path))))
 
-    (when (not imagep)
-      (funcall nov-render-html-function))
-    (goto-char (point-min))))
+      (when (not imagep)
+        (funcall nov-render-html-function))
+      (goto-char (point-min)))))
 
 (defun nov-find-document (predicate)
   "Return first item in `nov-documents' PREDICATE is true for."
@@ -639,7 +641,7 @@ the HTML is rendered with `nov-render-html-function'."
         (erase-buffer)
         (insert (format "EPUB Version: %s\n" version))
         (dolist (item metadata)
-          (-let [(key . value) item]
+          (seq-let (key &rest value) item
             (insert (format "%s: " (capitalize (symbol-name key))))
             (if value
                 (if (eq key 'description)
@@ -768,28 +770,27 @@ Saving is only done if `nov-save-place-file' is set."
   (interactive)
   (or nov-history
       (user-error "This is the first document you looked at"))
-  (-let ((history-forward
-          (cons (list nov-documents-index (point))
-                nov-history-forward))
-         ((index opoint) (car nov-history)))
-    (setq nov-history (cdr nov-history))
-    (nov-goto-document index)
-    (setq nov-history (cdr nov-history))
-    (setq nov-history-forward history-forward)
-    (goto-char opoint)
-    (recenter (1- (max 1 scroll-margin)))))
+  (let ((history-forward (cons (list nov-documents-index (point))
+                               nov-history-forward)))
+    (seq-let (index opoint) (car nov-history)
+      (setq nov-history (cdr nov-history))
+      (nov-goto-document index)
+      (setq nov-history (cdr nov-history))
+      (setq nov-history-forward history-forward)
+      (goto-char opoint)
+      (recenter (1- (max 1 scroll-margin))))))
 
 (defun nov-history-forward ()
   "Go forward in the history of visited documents."
   (interactive)
   (or nov-history-forward
       (user-error "This is the last document you looked at"))
-  (-let ((history-forward (cdr nov-history-forward))
-         ((index opoint) (car nov-history-forward)))
-    (nov-goto-document index)
-    (setq nov-history-forward history-forward)
-    (goto-char opoint)
-    (recenter (1- (max 1 scroll-margin)))))
+  (let ((history-forward (cdr nov-history-forward)))
+    (seq-let (index opoint) (car nov-history-forward)
+      (nov-goto-document index)
+      (setq nov-history-forward history-forward)
+      (goto-char opoint)
+      (recenter (1- (max 1 scroll-margin))))))
 
 ;;;###autoload
 (define-derived-mode nov-mode special-mode "EPUB"
@@ -814,15 +815,14 @@ Saving is only done if `nov-save-place-file' is set."
     (nov-clean-up)
     (error "Invalid EPUB file"))
   (let* ((content (nov-slurp (nov-container-filename nov-temp-dir) t))
-         (content-file (->> (nov-container-content-filename content)
-                            (nov-make-path nov-temp-dir)))
+         (content-file-name (nov-container-content-filename content))
+         (content-file (nov-make-path nov-temp-dir content-file-name))
          (work-dir (file-name-directory content-file))
          (content (nov-slurp content-file t)))
     (setq nov-content-file content-file)
     (setq nov-epub-version (nov-content-version content))
     (setq nov-metadata (nov-content-metadata content))
-    (setq nov-documents (->> (nov-content-files work-dir content)
-                             (apply 'vector)))
+    (setq nov-documents (apply 'vector (nov-content-files work-dir content)))
     (setq nov-documents-index 0))
   (setq buffer-undo-list t)
   (setq nov-file-name (buffer-file-name))
@@ -945,10 +945,10 @@ See also `nov-bookmark-make-record'."
                 (libxml-parse-html-region (point-min) (point-max)))))
     (mapcar
      (lambda (node)
-       (-let* ((href (dom-attr node 'href))
-               (label (dom-text node))
-               ((filename target) (nov-url-filename-and-target href)))
-         (list label filename 'nov-imenu-goto-function target)))
+       (let ((href (dom-attr node 'href))
+             (label (dom-text node)))
+         (seq-let (filename target) (nov-url-filename-and-target href)
+           (list label filename 'nov-imenu-goto-function target))))
      (esxml-query-all "a" toc))))
 
 (defun nov-imenu-setup ()
