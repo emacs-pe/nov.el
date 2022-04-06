@@ -5,7 +5,7 @@
 ;; Author: Vasilij Schneidermann <mail@vasilij.de>
 ;; URL: https://depp.brause.cc/nov.el
 ;; Version: 0.3.4
-;; Package-Requires: ((dash "2.12.0") (esxml "0.3.6") (emacs "24.4"))
+;; Package-Requires: ((dash "2.12.0") (esxml "0.3.6") (emacs "25.1"))
 ;; Keywords: hypermedia, multimedia, epub
 
 ;; This file is NOT part of GNU Emacs.
@@ -44,6 +44,7 @@
 ;;; Code:
 
 (require 'cl-lib)
+(require 'dom)
 (require 'dash)
 (require 'esxml-query)
 (require 'image)
@@ -223,7 +224,7 @@ If PARSE-XML-P is t, return the contents as parsed by libxml."
   "Return the content filename for CONTENT."
   (let* ((query "container>rootfiles>rootfile[media-type='application/oebps-package+xml']")
          (node (esxml-query query content)))
-    (esxml-node-attribute 'full-path node)))
+    (dom-attr node 'full-path)))
 
 (defun nov-container-valid-p (directory)
   "Return t if DIRECTORY holds a valid EPUB container."
@@ -248,7 +249,7 @@ If PARSE-XML-P is t, return the contents as parsed by libxml."
 (defun nov-content-version (content)
   "Return the EPUB version for CONTENT."
   (let* ((node (esxml-query "package" content))
-         (version (esxml-node-attribute 'version node)))
+         (version (dom-attr node 'version)))
     (when (not version)
       (error "Version not specified"))
     version))
@@ -258,7 +259,7 @@ If PARSE-XML-P is t, return the contents as parsed by libxml."
 This is used in `nov-content-unique-identifier' to retrieve the
 the specific type of unique identifier."
   (let* ((node (esxml-query "package[unique-identifier]" content))
-         (name (esxml-node-attribute 'unique-identifier node)))
+         (name (dom-attr node 'unique-identifier)))
     (when (not name)
       (error "Unique identifier name not specified"))
     name))
@@ -268,7 +269,7 @@ the specific type of unique identifier."
   (let* ((name (nov-content-unique-identifier-name content))
          (selector (format "package>metadata>identifier[id='%s']"
                            (esxml-query-css-escape name)))
-         (id (car (esxml-node-children (esxml-query selector content)))))
+         (id (car (dom-children (esxml-query selector content)))))
     (when (not id)
       (error "Unique identifier not found by its name: %s" name))
     (intern id)))
@@ -290,8 +291,7 @@ Required keys are 'identifier and everything in
 `nov-optional-metadata-tags'."
   (let* ((identifier (nov-content-unique-identifier content))
          (candidates (mapcar (lambda (node)
-                               (cons (esxml-node-tag node)
-                                     (car (esxml-node-children node))))
+                               (cons (dom-tag node) (car (dom-children node))))
                              (esxml-query-all "package>metadata>*" content)))
          (required (mapcar (lambda (tag)
                              (let ((candidate (cdr (assq tag candidates))))
@@ -309,19 +309,19 @@ Required keys are 'identifier and everything in
   "Extract an alist of manifest files for CONTENT in DIRECTORY.
 Each alist item consists of the identifier and full path."
   (mapcar (lambda (node)
-            (-let [(&alist 'id id 'href href) (esxml-node-attributes node)]
+            (-let [(&alist 'id id 'href href) (dom-attributes node)]
               (cons (intern id)
                     (nov-make-path directory (nov-urldecode href)))))
           (esxml-query-all "package>manifest>item" content)))
 
 (defun nov-content-spine (content)
   "Extract a list of spine identifiers for CONTENT."
-  (mapcar (lambda (node) (intern (esxml-node-attribute 'idref node)))
+  (mapcar (lambda (node) (intern (dom-attr node 'idref)))
           (esxml-query-all "package>spine>itemref" content)))
 
 (defun nov--content-epub2-files (content manifest files)
   (let* ((node (esxml-query "package>spine[toc]" content))
-         (id (esxml-node-attribute 'toc node)))
+         (id (dom-attr node 'toc)))
     (when (not id)
       (error "EPUB 2 NCX ID not found"))
     (setq nov-toc-id (intern id))
@@ -332,7 +332,7 @@ Each alist item consists of the identifier and full path."
 
 (defun nov--content-epub3-files (content manifest files)
   (let* ((node (esxml-query "package>manifest>item[properties~=nav]" content))
-         (id (esxml-node-attribute 'id node)))
+         (id (dom-attr node 'id)))
     (when (not id)
       (error "EPUB 3 <nav> ID not found"))
     (setq nov-toc-id (intern id))
@@ -353,9 +353,8 @@ Each alist item consists of the identifier and full path."
       (nov--content-epub3-files content manifest files))))
 
 (defun nov--walk-ncx-node (node)
-  (let ((tag (esxml-node-tag node))
-        (children (--filter (eq (esxml-node-tag it) 'navPoint)
-                            (esxml-node-children node))))
+  (let ((tag (dom-tag node))
+        (children (--filter (eq (dom-tag it) 'navPoint) (dom-children node))))
     (cond
      ((eq tag 'navMap)
       (insert "<ol>\n")
@@ -364,8 +363,8 @@ Each alist item consists of the identifier and full path."
      ((eq tag 'navPoint)
       (let* ((label-node (esxml-query "navLabel>text" node))
              (content-node (esxml-query "content" node))
-             (href (nov-urldecode (esxml-node-attribute 'src content-node)))
-             (label (car (esxml-node-children label-node))))
+             (href (nov-urldecode (dom-attr content-node 'src)))
+             (label (car (dom-children label-node))))
         (when (not href)
           (error "Navigation point is missing href attribute"))
         (let ((link (format "<a href=\"%s\">%s</a>"
@@ -524,7 +523,7 @@ internal ones."
 Sets `header-line-format' to a combination of the EPUB title and
 chapter title."
   (let ((title (cdr (assq 'title nov-metadata)))
-        (chapter-title (car (esxml-node-children dom))))
+        (chapter-title (car (dom-children dom))))
     (when (not chapter-title)
       (setq chapter-title '(:propertize "No title" face italic)))
     ;; this shouldn't happen for properly authored EPUBs
@@ -856,7 +855,8 @@ Saving is only done if `nov-save-place-file' is set."
 
 
 (defun nov--find-file (file index point)
-  "Open FILE(nil means current buffer) in nov-mode and go to the specified INDEX and POSITION."
+  "Open FILE in nov-mode and go to the specified INDEX and POSITION.
+If FILE is nil, the current buffer is used."
   (when file
     (find-file file))
   (unless (eq major-mode 'nov-mode)
@@ -936,7 +936,6 @@ See also `nov-bookmark-make-record'."
 
 (defun nov-imenu-create-index ()
   "Generate Imenu index."
-  (require 'esxml)
   (let* ((toc-path (cdr (aref nov-documents 0)))
          (ncxp (version< nov-epub-version "3.0"))
          (toc (with-temp-buffer
@@ -946,9 +945,8 @@ See also `nov-bookmark-make-record'."
                 (libxml-parse-html-region (point-min) (point-max)))))
     (mapcar
      (lambda (node)
-       (-let* ((href (esxml-node-attribute 'href node))
-               (label (mapconcat 'string-trim-whitespace
-                                 (esxml-find-descendants #'stringp node) " "))
+       (-let* ((href (dom-attr node 'href))
+               (label (dom-text node))
                ((filename target) (nov-url-filename-and-target href)))
          (list label filename 'nov-imenu-goto-function target)))
      (esxml-query-all "a" toc))))
