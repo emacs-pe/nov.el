@@ -73,7 +73,7 @@
   :type '(file :must-match t)
   :group 'nov)
 
-(defcustom nov-unzip-args '("-o" directory filename)
+(defcustom nov-unzip-args '("-od" directory filename)
   "Arguments to decompression executable.
 This variable expects a list of strings, except for `directory'
 and `filename' symbols, which will be replaced accordingly when
