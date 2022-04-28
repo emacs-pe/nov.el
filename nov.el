@@ -69,8 +69,16 @@
   :group 'multimedia)
 
 (defcustom nov-unzip-program (executable-find "unzip")
-  "Path to `unzip` executable."
+  "Path to decompression executable."
   :type '(file :must-match t)
+  :group 'nov)
+
+(defcustom nov-unzip-args '("-o" directory filename)
+  "Arguments to decompression executable.
+This variable expects a list of strings, except for `directory'
+and `filename' symbols, which will be replaced accordingly when
+opening an EPUB file."
+  :type 'list
   :group 'nov)
 
 (defcustom nov-variable-pitch t
@@ -186,9 +194,11 @@ Each element of the stack is a list (NODEINDEX BUFFERPOS).")
 (defun nov-unzip-epub (directory filename)
   "Extract FILENAME into DIRECTORY.
 Unnecessary nesting is removed with `nov-unnest-directory'."
-  (let ((status (call-process nov-unzip-program nil "*nov unzip*" t
-                              "-od" directory filename))
-        child)
+  (let* ((status (apply #'call-process nov-unzip-program nil "*nov unzip*" t
+                        (mapcar (lambda (e) (cond ((eq e 'directory) directory)
+                                                  ((eq e 'filename) filename)
+                                                  (t e))) nov-unzip-args)))
+         child)
     (while (setq child (nov-contains-nested-directory-p directory))
       (nov-unnest-directory directory child))
     ;; HACK: unzip preserves file permissions, no matter how silly they

@@ -29,11 +29,17 @@ and install with `M-x package-install RET nov RET`.
 
 ## Setup
 
-Make sure you have an `unzip` executable on `PATH`, otherwise the
-extraction of EPUB files will fail.  If you for some reason have
-`unzip` in a non-standard location, customize `nov-unzip-program` to
-its path.  You'll also need an Emacs compiled with `libxml2` support,
-otherwise rendering will fail.
+By default, `nov.el` uses `unzip` on `PATH` to extract EPUB files. You
+can customize `nov-unzip-program` if it is located elsewhere. You can
+also customize `nov-unzip-args` if you use a different decompression
+tool like `bsdtar`. It must accept a target `directory` where nov
+unzips the EPUB `filename`.
+
+    (setq nov-unzip-program (executable-find "bsdtar")
+          nov-unzip-args '("-xC" directory "-f" filename))
+
+You'll also need an Emacs compiled with `libxml2` support, otherwise
+rendering will fail.
 
 Put the following in your init file:
 
