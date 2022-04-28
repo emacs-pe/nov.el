@@ -195,9 +195,12 @@ Each element of the stack is a list (NODEINDEX BUFFERPOS).")
   "Extract FILENAME into DIRECTORY.
 Unnecessary nesting is removed with `nov-unnest-directory'."
   (let* ((status (apply #'call-process nov-unzip-program nil "*nov unzip*" t
-                        (mapcar (lambda (e) (cond ((eq e 'directory) directory)
-                                                  ((eq e 'filename) filename)
-                                                  (t e))) nov-unzip-args)))
+                        (mapcar (lambda (arg)
+                                  (cond
+                                   ((eq arg 'directory) directory)
+                                   ((eq arg 'filename) filename)
+                                   (t arg)))
+                                nov-unzip-args)))
          child)
     (while (setq child (nov-contains-nested-directory-p directory))
       (nov-unnest-directory directory child))
