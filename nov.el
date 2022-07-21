@@ -121,6 +121,13 @@ If set to `nil', no saving and restoring is performed."
                  (const :tag "Don't save last reading places" nil))
   :group 'nov)
 
+(defcustom nov-header-line-format "%t: %c"
+  "Header line format.
+- %t is replaced by the title.
+- %u is replaced by the chapter title."
+  :type 'string
+  :group 'nov)
+
 (defvar-local nov-file-name nil
   "Path to the EPUB file backing this buffer.")
 
@@ -535,16 +542,22 @@ internal ones."
 
 (defun nov-render-title (dom)
   "Custom <title> rendering function for DOM.
-Sets `header-line-format' to a combination of the EPUB title and
-chapter title."
-  (let ((title (cdr (assq 'title nov-metadata)))
-        (chapter-title (car (dom-children dom))))
-    (when (not chapter-title)
-      (setq chapter-title '(:propertize "No title" face italic)))
-    ;; this shouldn't happen for properly authored EPUBs
-    (when (not title)
-      (setq title '(:propertize "No title" face italic)))
-    (setq header-line-format (list title ": " chapter-title))))
+Sets `header-line-format' according to `nov-header-line-format'."
+  (setq header-line-format
+	(and nov-header-line-format
+	     (let ((title (cdr (assq 'title nov-metadata)))
+		   (chapter-title (car (dom-children dom))))
+	       (when (not chapter-title)
+		 (setq chapter-title (propertize "No title" 'face 'italic)))
+	       ;; this shouldn't happen for properly authored EPUBs
+	       (when (not title)
+		 (setq title (propertize "No title" 'face 'italic)))
+	       (string-replace
+		"%" "%%"
+		(format-spec
+		 nov-header-line-format
+		 `((?c . ,chapter-title)
+		   (?t . ,title))))))))
 
 (defvar nov-shr-rendering-functions
   '(;; default function uses url-retrieve and fails on local images
