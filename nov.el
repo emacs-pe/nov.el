@@ -124,7 +124,7 @@ If set to `nil', no saving and restoring is performed."
 (defcustom nov-header-line-format "%t: %c"
   "Header line format.
 - %t is replaced by the title.
-- %u is replaced by the chapter title."
+- %c is replaced by the chapter title."
   :type 'string
   :group 'nov)
 
