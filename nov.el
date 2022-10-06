@@ -5,7 +5,7 @@
 ;; Author: Vasilij Schneidermann <mail@vasilij.de>
 ;; URL: https://depp.brause.cc/nov.el
 ;; Version: 0.4.0
-;; Package-Requires: ((esxml "0.3.6") (emacs "25.1"))
+;; Package-Requires: ((esxml "0.3.6") (emacs "27.1"))
 ;; Keywords: hypermedia, multimedia, epub
 
 ;; This file is NOT part of GNU Emacs.
@@ -218,10 +218,6 @@ Unnecessary nesting is removed with `nov-unnest-directory'."
 Displays MESSAGE in a warnings buffer, with LEVEL as severity."
   (display-warning 'nov message level))
 
-(defmacro nov-ignore-file-errors (&rest body)
-  "Like `ignore-errors', but for file errors."
-  `(condition-case nil (progn ,@body) (file-error nil)))
-
 (defun nov-slurp (filename &optional parse-xml-p)
   "Return the contents of FILENAME.
 If PARSE-XML-P is t, return the contents as parsed by libxml."
@@ -233,7 +229,7 @@ If PARSE-XML-P is t, return the contents as parsed by libxml."
 
 (defun nov-mimetype-valid-p (directory)
   "Return t if DIRECTORY contains a valid EPUB mimetype file."
-  (nov-ignore-file-errors
+  (ignore-error 'file-error
     (let ((filename (expand-file-name "mimetype" directory)))
       (equal (nov-slurp filename) "application/epub+zip"))))
 
@@ -481,8 +477,8 @@ Each alist item consists of the identifier and full path."
                      nov-documents-index
                    0)))
       (nov-save-place identifier index (point)))
-    (nov-ignore-file-errors
-     (delete-directory nov-temp-dir t))))
+    (ignore-error 'file-error
+      (delete-directory nov-temp-dir t))))
 
 (defun nov-clean-up-all ()
   "Delete temporary files of all opened EPUB buffers."
