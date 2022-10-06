@@ -164,9 +164,8 @@ Each element of the stack is a list (NODEINDEX BUFFERPOS).")
 Each element of the stack is a list (NODEINDEX BUFFERPOS).")
 
 (defun nov-directory-files (directory)
-  "Returns a list of files in DIRECTORY except for . and .."
-  (seq-remove (lambda (file) (string-match-p "/\\.\\(?:\\.\\)?\\'" file))
-              (directory-files directory t)))
+  "Return a list of files in DIRECTORY except for . and .."
+  (directory-files directory 'full directory-files-no-dot-files-regexp))
 
 (defun nov-contains-nested-directory-p (directory)
   "Non-nil if DIRECTORY contains exactly one directory."
