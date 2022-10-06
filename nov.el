@@ -163,10 +163,6 @@ Each element of the stack is a list (NODEINDEX BUFFERPOS).")
   "Stack of documents user has visited with `nov-history-back' command.
 Each element of the stack is a list (NODEINDEX BUFFERPOS).")
 
-(defun nov-make-path (directory file)
-  "Create a path from DIRECTORY and FILE."
-  (concat (file-name-as-directory directory) file))
-
 (defun nov-directory-files (directory)
   "Returns a list of files in DIRECTORY except for . and .."
   (seq-remove (lambda (file) (string-match-p "/\\.\\(?:\\.\\)?\\'" file))
@@ -239,13 +235,13 @@ If PARSE-XML-P is t, return the contents as parsed by libxml."
 (defun nov-mimetype-valid-p (directory)
   "Return t if DIRECTORY contains a valid EPUB mimetype file."
   (nov-ignore-file-errors
-    (let ((filename (nov-make-path directory "mimetype")))
+    (let ((filename (expand-file-name "mimetype" directory)))
       (equal (nov-slurp filename) "application/epub+zip"))))
 
 (defun nov-container-filename (directory)
   "Return the container filename for DIRECTORY."
-  (let ((filename (nov-make-path directory "META-INF")))
-    (nov-make-path filename "container.xml")))
+  (let ((filename (expand-file-name "META-INF" directory)))
+    (expand-file-name "container.xml" filename)))
 
 (defun nov-container-content-filename (content)
   "Return the content filename for CONTENT."
@@ -260,7 +256,7 @@ If PARSE-XML-P is t, return the contents as parsed by libxml."
       (let* ((content (nov-slurp filename t))
              (content-file (nov-container-content-filename content)))
         (when (and content content-file)
-          (file-exists-p (nov-make-path directory content-file)))))))
+          (file-exists-p (expand-file-name content-file directory)))))))
 
 (defun nov-epub-valid-p (directory)
   "Return t if DIRECTORY makes up a valid EPUB document."
@@ -339,7 +335,7 @@ Each alist item consists of the identifier and full path."
             (let ((id (dom-attr node 'id))
                   (href (dom-attr node 'href)))
               (cons (intern id)
-                    (nov-make-path directory (nov-urldecode href)))))
+                    (expand-file-name (nov-urldecode href) directory))))
           (esxml-query-all "package>manifest>item" content)))
 
 (defun nov-content-spine (content)
@@ -741,7 +737,7 @@ Takes an optional COUNT, goes forward if COUNT is negative."
     (when (not (zerop (length filename)))
       (let* ((current-path (cdr (aref nov-documents nov-documents-index)))
              (directory (file-name-directory current-path))
-             (path (file-truename (nov-make-path directory filename)))
+             (path (file-truename (expand-file-name filename directory)))
              (match (nov-find-document
                      (lambda (doc) (equal path (file-truename (cdr doc)))))))
         (when (not match)
@@ -872,7 +868,7 @@ Saving is only done if `nov-save-place-file' is set."
     (error "Invalid EPUB file"))
   (let* ((content (nov-slurp (nov-container-filename nov-temp-dir) t))
          (content-file-name (nov-container-content-filename content))
-         (content-file (nov-make-path nov-temp-dir content-file-name))
+         (content-file (expand-file-name content-file-name nov-temp-dir))
          (work-dir (file-name-directory content-file))
          (content (nov-slurp content-file t)))
     (setq nov-content-file content-file)
