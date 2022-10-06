@@ -65,7 +65,7 @@
 ;;; EPUB preparation
 
 (defgroup nov nil
-  "EPUB reader mode"
+  "EPUB reader mode."
   :group 'multimedia)
 
 (defcustom nov-unzip-program (executable-find "unzip")
@@ -118,7 +118,7 @@ should change it to contain the rendered version of it."
 
 (defcustom nov-save-place-file (locate-user-emacs-file "nov-places")
   "File name where last reading places are saved to and restored from.
-If set to `nil', no saving and restoring is performed."
+If set to nil, no saving and restoring is performed."
   :type '(choice (file  :tag "File name")
                  (const :tag "Don't save last reading places" nil))
   :group 'nov)
@@ -255,7 +255,7 @@ If PARSE-XML-P is t, return the contents as parsed by libxml."
 
 (defun nov-epub-valid-p (directory)
   "Return t if DIRECTORY makes up a valid EPUB document."
-  (when (not (nov-mimetype-valid-p directory))
+  (unless (nov-mimetype-valid-p directory)
     (message "Invalid mimetype"))
   (nov-container-valid-p directory))
 
@@ -440,7 +440,7 @@ Each alist item consists of the identifier and full path."
     (define-key map (kbd "c") 'nov-copy-url)
     map))
 
-(easy-menu-define nov-mode-menu nov-mode-map "Menu for nov-mode"
+(easy-menu-define nov-mode-menu nov-mode-map "Menu for nov-mode."
   '("EPUB"
     ["Next" nov-next-document
      :help "Go to the next document"]
@@ -841,7 +841,7 @@ Saving is only done if `nov-save-place-file' is set."
 
 ;;;###autoload
 (define-derived-mode nov-mode special-mode "EPUB"
-  "Major mode for reading EPUB documents"
+  "Major mode for reading EPUB documents."
   (add-hook 'kill-buffer-hook 'nov-clean-up nil t)
   (add-hook 'kill-emacs-hook 'nov-clean-up-all)
   (add-hook 'change-major-mode-hook 'nov-clean-up nil t)
