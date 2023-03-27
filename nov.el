@@ -302,11 +302,11 @@ the specific type of unique identifier."
 (defvar nov-optional-metadata-tags
   '(contributor coverage creator date description format
     publisher relation rights source subject type)
-  "Optional metadata tags used for 'nov-content-metadata'.")
+  "Optional metadata tags used for `nov-content-metadata'.")
 
 (defun nov-content-metadata (content)
   "Return a metadata alist for CONTENT.
-Required keys are 'identifier and everything in
+Required keys are \\='identifier and everything in
 `nov-required-metadata-tags', optional keys are in
 `nov-optional-metadata-tags'."
   (let* ((identifier (nov-content-unique-identifier content))
