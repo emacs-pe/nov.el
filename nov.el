@@ -552,9 +552,9 @@ Sets `header-line-format' according to `nov-header-line-format'."
 	       ;; this shouldn't happen for properly authored EPUBs
 	       (when (not title)
 		 (setq title (propertize "No title" 'face 'italic)))
-	       (string-replace
-		"%" "%%"
-		(format-spec
+               (replace-regexp-in-string
+                "%" "%%"
+	        (format-spec
 		 nov-header-line-format
 		 `((?c . ,chapter-title)
 		   (?t . ,title))))))))
