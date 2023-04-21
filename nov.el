@@ -991,5 +991,29 @@ See also `nov-bookmark-make-record'."
   (setq imenu-create-index-function 'nov-imenu-create-index))
 (add-hook 'nov-mode-hook 'nov-imenu-setup)
 
+
+;;; multi-isearch interop
+
+(defun nov-misearch-next-buffer (buffer wrap)
+  (if isearch-forward
+      (cond
+       ((< nov-documents-index (1- (length nov-documents)))
+        (nov-goto-document (1+ nov-documents-index))
+        (current-buffer))
+       (wrap
+        (nov-goto-document 0)
+        nil))
+    (cond
+     ((> nov-documents-index 0)
+      (nov-goto-document (1- nov-documents-index))
+      (current-buffer))
+     (wrap
+      (nov-goto-document (1- (length nov-documents)))
+      nil))))
+
+(defun nov-misearch-setup ()
+  (setq-local multi-isearch-next-buffer-function #'nov-misearch-next-buffer))
+(add-hook 'nov-mode-hook #'nov-misearch-setup)
+
 (provide 'nov)
 ;;; nov.el ends here

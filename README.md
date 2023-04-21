@@ -15,6 +15,7 @@ Features:
 - Supports textual and image documents
 - Info-style history navigation
 - View source of document files
+- Info-style incremental search
 - Metadata display
 - Image rescaling
 
