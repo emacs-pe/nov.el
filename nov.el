@@ -614,6 +614,8 @@ the HTML is rendered with `nov-render-html-function'."
 
       (when (not imagep)
         (funcall nov-render-html-function))
+      ;; NOTE: this is how doc-view avoids overwriting the file
+      (set-buffer-modified-p nil)
       (goto-char (point-min)))))
 
 (defun nov-find-document (predicate)
@@ -860,10 +862,9 @@ Saving is only done if `nov-save-place-file' is set."
     (setq nov-documents (apply 'vector (nov-content-files work-dir content)))
     (setq nov-documents-index 0))
   (setq buffer-undo-list t)
-  (setq nov-file-name (buffer-file-name))
+  (setq nov-file-name (buffer-file-name)) ; kept for compatibility reasons
   (setq-local bookmark-make-record-function
               'nov-bookmark-make-record)
-  (set-visited-file-name nil t) ; disable autosaves and save questions
   (let ((place (nov-saved-place (cdr (assq 'identifier nov-metadata)))))
     (if place
         (let ((index (cdr (assq 'index place)))
