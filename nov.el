@@ -216,6 +216,11 @@ Unnecessary nesting is removed with `nov-unnest-directory'."
     (nov-fix-permissions directory)
     status))
 
+(defun nov-warn (message &optional level)
+  "Like `display-warning', but for nov-specific warnings.
+Displays MESSAGE in a warnings buffer, with LEVEL as severity."
+  (display-warning 'nov message level))
+
 (defmacro nov-ignore-file-errors (&rest body)
   "Like `ignore-errors', but for file errors."
   `(condition-case nil (progn ,@body) (file-error nil)))
@@ -768,7 +773,11 @@ Internal URLs are visited with `nov-visit-relative-file'."
     (with-temp-buffer
       (insert-file-contents-literally nov-save-place-file)
       (goto-char (point-min))
-      (read (current-buffer)))))
+      (condition-case nil
+          (read (current-buffer))
+        (error
+         (nov-warn "Failed to retrieve saved places from `nov-save-place-file'")
+         nil)))))
 
 (defun nov-saved-place (identifier)
   "Retrieve saved place for IDENTIFIER in `nov-saved-place-file'."
@@ -864,7 +873,7 @@ Saving is only done if `nov-save-place-file' is set."
                 (setq nov-documents-index index)
                 (nov-render-document)
                 (goto-char point))
-            (warn "Couldn't restore last position")
+            (nov-warn "Couldn't restore last position")
             (nov-render-document)))
       (nov-render-document))))
 
