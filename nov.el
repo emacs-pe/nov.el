@@ -968,7 +968,9 @@ See also `nov-bookmark-make-record'."
 
 (defun nov-imenu-goto-function (_name filename target)
   "Visit imenu item using FILENAME and TARGET."
-  (nov-visit-relative-file filename target))
+  ;; Make sure file is visited relative to toc file.
+  (let ((nov-documents-index 0))
+    (nov-visit-relative-file filename target)))
 
 (defun nov-imenu-create-index ()
   "Generate Imenu index."
