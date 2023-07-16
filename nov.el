@@ -687,17 +687,18 @@ the HTML is rendered with `nov-render-html-function'."
         (goto-char (point-min))))
     (pop-to-buffer buffer)))
 
-(defun nov-next-document ()
-  "Go to the next document and render it."
-  (interactive)
-  (when (< nov-documents-index (1- (length nov-documents)))
-    (nov-goto-document (1+ nov-documents-index))))
+(defun nov-next-document (&optional count)
+  "Go to the next document and render it.
+Takes an optional COUNT, goes backward if COUNT is negative."
+  (interactive "p")
+  (nov-goto-document (min (1- (length nov-documents))
+                          (+ nov-documents-index (or count 1)))))
 
-(defun nov-previous-document ()
-  "Go to the previous document and render it."
-  (interactive)
-  (when (> nov-documents-index 0)
-    (nov-goto-document (1- nov-documents-index))))
+(defun nov-previous-document (&optional count)
+  "Go to the previous document and render it.
+Takes an optional COUNT, goes forward if COUNT is negative."
+  (interactive "p")
+  (nov-goto-document (max 0 (- nov-documents-index (or count 1)))))
 
 (defun nov-scroll-up (arg)
   "Scroll with `scroll-up' or visit next chapter if at bottom."
