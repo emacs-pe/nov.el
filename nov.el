@@ -78,7 +78,9 @@
 This variable expects a list of strings, except for `directory'
 and `filename' symbols, which will be replaced accordingly when
 opening an EPUB file."
-  :type 'list
+  :type '(repeat (choice (string :tag "Argument")
+                         (const :tag "Directory" directory)
+                         (const :tag "Filename" filename)))
   :group 'nov)
 
 (defcustom nov-variable-pitch t
