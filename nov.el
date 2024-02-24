@@ -1,4 +1,4 @@
-;;; nov.el --- Featureful EPUB reader mode
+;;; nov.el --- Featureful EPUB reader mode -*- lexical-binding:t -*-
 
 ;; Copyright (C) 2017 Vasilij Schneidermann <mail@vasilij.de>
 
