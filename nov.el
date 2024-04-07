@@ -590,7 +590,10 @@ To be used when `nov-text-width' is set to t."
   (let (;; HACK: make buttons use our own commands
         (shr-map nov-button-map)
         (shr-external-rendering-functions nov-shr-rendering-functions)
-        (shr-use-fonts nov-variable-pitch))
+        (shr-use-fonts nov-variable-pitch)
+        ;; HACK: preserve `truncate-lines' for `visual-line-mode' to
+        ;; work correctly after a table has been rendered...
+        (truncate-lines truncate-lines))
     ;; HACK: `shr-external-rendering-functions' doesn't cover
     ;; every usage of `shr-tag-img'
     (cl-letf (((symbol-function 'shr-tag-img) 'nov-render-img))
