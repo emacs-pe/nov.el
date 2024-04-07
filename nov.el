@@ -571,6 +571,19 @@ Sets `header-line-format' according to `nov-header-line-format'."
     (title . nov-render-title))
   "Alist of rendering functions used with `shr-render-region'.")
 
+(defun nov-fill-line ()
+  "Like `shr-fill-line', but only performing indentation.
+To be used when `nov-text-width' is set to t."
+  (let ((shr-indentation (or (get-text-property (point) 'shr-indentation)
+                             shr-indentation)))
+    (put-text-property (point) (1+ (point)) 'shr-indentation nil)
+    (let ((face (get-text-property (point) 'face))
+	  (background-start (point)))
+      (shr-indent)
+      (when face
+	(put-text-property background-start (point) 'face
+			   `,(shr-face-background face))))))
+
 (defun nov-render-html ()
   "Render HTML in current buffer with shr."
   (run-hooks 'nov-pre-html-render-hook)
@@ -582,7 +595,7 @@ Sets `header-line-format' according to `nov-header-line-format'."
     ;; every usage of `shr-tag-img'
     (cl-letf (((symbol-function 'shr-tag-img) 'nov-render-img))
       (if (eq nov-text-width t)
-          (cl-letf (((symbol-function 'shr-fill-line) 'ignore))
+          (cl-letf (((symbol-function 'shr-fill-line) #'nov-fill-line))
             (shr-render-region (point-min) (point-max)))
         (let ((shr-width nov-text-width))
           (shr-render-region (point-min) (point-max))))))
