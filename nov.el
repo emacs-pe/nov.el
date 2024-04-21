@@ -1015,7 +1015,7 @@ See also `nov-bookmark-make-record'."
 
 ;;; multi-isearch interop
 
-(defun nov-misearch-next-buffer (buffer wrap)
+(defun nov-misearch-next-buffer (_buffer wrap)
   (if isearch-forward
       (cond
        ((< nov-documents-index (1- (length nov-documents)))
