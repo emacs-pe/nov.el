@@ -133,8 +133,17 @@ If set to `nil', no saving and restoring is performed."
 (defvar-local nov-file-name nil
   "Path to the EPUB file backing this buffer.")
 
-(defvar-local nov-temp-dir nil
-  "Temporary directory containing the buffer's EPUB files.")
+(defvar-local nov-initialize-work-dir-p t
+  "Set to nil if no working directory should be initialized.")
+(put 'nov-initialize-work-dir-p 'permanent-local t)
+
+(defvar-local nov-remove-work-dir-on-exit-p t
+  "Set to nil if working directory should be preserved after exit.")
+(put 'nov-remove-work-dir-on-exit-p 'permanent-local t)
+
+(defvar-local nov-work-dir nil
+  "Directory containing the buffer's EPUB files.")
+(put 'nov-work-dir 'permanent-local t)
 
 (defvar-local nov-content-file nil
   "Path to the EPUB buffer's .opf file.")
@@ -480,14 +489,14 @@ Each alist item consists of the identifier and full path."
 
 (defun nov-clean-up ()
   "Delete temporary files of the current EPUB buffer."
-  (when nov-temp-dir
+  (when (and nov-remove-work-dir-on-exit-p nov-work-dir)
     (let ((identifier (cdr (assq 'identifier nov-metadata)))
           (index (if (integerp nov-documents-index)
                      nov-documents-index
                    0)))
       (nov-save-place identifier index (point)))
     (nov-ignore-file-errors
-     (delete-directory nov-temp-dir t))))
+     (delete-directory nov-work-dir t))))
 
 (defun nov-clean-up-all ()
   "Delete temporary files of all opened EPUB buffers."
@@ -848,18 +857,13 @@ Saving is only done if `nov-save-place-file' is set."
       (goto-char opoint)
       (recenter (1- (max 1 scroll-margin))))))
 
-;;;###autoload
-(define-derived-mode nov-mode special-mode "EPUB"
-  "Major mode for reading EPUB documents"
-  (add-hook 'kill-buffer-hook 'nov-clean-up nil t)
-  (add-hook 'kill-emacs-hook 'nov-clean-up-all)
-  (add-hook 'change-major-mode-hook 'nov-clean-up nil t)
-  (when (not buffer-file-name)
+(defun nov--initialize-temp-dir (path)
+  (when (not path)
     (error "EPUB must be associated with file"))
   (when (not nov-unzip-program)
     (error "unzip executable not found, customize `nov-unzip-program'"))
-  (setq nov-temp-dir (make-temp-file "nov-" t ".epub"))
-  (let ((exit-code (nov-unzip-epub nov-temp-dir buffer-file-name)))
+  (setq nov-work-dir (make-temp-file "nov-" t ".epub"))
+  (let ((exit-code (nov-unzip-epub nov-work-dir path)))
     (when (not (integerp exit-code))
       (nov-clean-up)
       (error "EPUB extraction aborted by signal %s" exit-code))
@@ -867,12 +871,35 @@ Saving is only done if `nov-save-place-file' is set."
       (nov-clean-up)
       (error "EPUB extraction failed with exit code %d (see *nov unzip* buffer)"
              exit-code)))
-  (when (not (nov-epub-valid-p nov-temp-dir))
+  (when (not (nov-epub-valid-p nov-work-dir))
     (nov-clean-up)
-    (error "Invalid EPUB file"))
-  (let* ((content (nov-slurp (nov-container-filename nov-temp-dir) t))
+    (error "Invalid EPUB file")))
+
+(defun nov-open-directory (dir)
+  "Open EPUB buffer using DIR as directory of the document."
+  (interactive "DEPUB directory to read: ")
+  (let ((buf (generate-new-buffer (format "%s<nov>" dir))))
+    (with-current-buffer buf
+      (setq nov-initialize-work-dir-p nil)
+      (setq nov-remove-work-dir-on-exit-p nil)
+      (setq nov-work-dir dir)
+      (nov-mode))
+    (switch-to-buffer buf)))
+
+;;;###autoload
+(define-derived-mode nov-mode special-mode "EPUB"
+  "Major mode for reading EPUB documents"
+  (when nov-remove-work-dir-on-exit-p
+    (add-hook 'kill-buffer-hook 'nov-clean-up nil t)
+    (add-hook 'kill-emacs-hook 'nov-clean-up-all)
+    (add-hook 'change-major-mode-hook 'nov-clean-up nil t))
+
+  (when nov-initialize-work-dir-p
+    (nov--initialize-temp-dir buffer-file-name))
+
+  (let* ((content (nov-slurp (nov-container-filename nov-work-dir) t))
          (content-file-name (nov-container-content-filename content))
-         (content-file (nov-make-path nov-temp-dir content-file-name))
+         (content-file (nov-make-path nov-work-dir content-file-name))
          (work-dir (file-name-directory content-file))
          (content (nov-slurp content-file t)))
     (setq nov-content-file content-file)
