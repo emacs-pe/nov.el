@@ -924,7 +924,7 @@ If FILE is nil, the current buffer is used."
 
 ;; Bookmark interop
 (defun nov-bookmark-make-record  ()
-  "Create a bookmark epub record."
+  "Create a bookmark EPUB record."
   (cons (buffer-name)
         `((filename . ,nov-file-name)
           (index . ,nov-documents-index)
