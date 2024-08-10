@@ -515,6 +515,8 @@ Each alist item consists of the identifier and full path."
   (mapcar 'nov-urldecode (list (url-filename url) (url-target url))))
 
 ;; adapted from `shr-rescale-image'
+;; TODO: adjust to latest shr code (which added zooming support)
+;; TODO: support width/height as supplied in img/image/svg attributes
 (defun nov-insert-image (path alt)
   "Insert an image for PATH at point, falling back to ALT.
 This function honors `shr-max-image-proportion' if possible."
@@ -556,6 +558,31 @@ internal ones."
       (setq url (expand-file-name (nov-urldecode url)))
       (nov-insert-image url alt))))
 
+(defun nov--render-image (dom &optional url)
+  (let ((img-tag (dom-node 'img
+                           (dom-attributes dom)
+                           (dom-children dom))))
+    (nov-render-img img-tag url)))
+
+(defun nov-render-svg (dom)
+  "Custom <svg> rendering function for DOM.
+If the SVG element only contains <image> tags with an internal
+URL, insert each image with `nov-insert-image'. Otherwise, fall
+back to regular <img> rendering via `nov-render-img' (for
+external URLs) or regular SVG rendering via `shr-tag-svg'."
+  (when (and (image-type-available-p 'svg)
+	     (not shr-inhibit-images))
+    (let ((children (dom-children dom)))
+      (if (seq-every-p (lambda (child) (eq (dom-tag child) 'image)) children)
+          (dolist (image-tag children)
+            (let ((url (or (dom-attr image-tag 'href)
+                           (dom-attr image-tag 'xlink:href))))
+              (if (nov-external-url-p url)
+                  (nov--render-image dom)
+                (nov-insert-image
+                 (expand-file-name (nov-urldecode url)) ""))))
+        (shr-tag-svg dom)))))
+
 (defun nov-render-title (dom)
   "Custom <title> rendering function for DOM.
 Sets `header-line-format' according to `nov-header-line-format'."
@@ -578,6 +605,8 @@ Sets `header-line-format' according to `nov-header-line-format'."
 (defvar nov-shr-rendering-functions
   '(;; default function uses url-retrieve and fails on local images
     (img . nov-render-img)
+    ;; likewise, but for SVG tags containing local images
+    (svg . nov-render-svg)
     ;; titles are rendered *inside* the document by default
     (title . nov-render-title))
   "Alist of rendering functions used with `shr-render-region'.")
