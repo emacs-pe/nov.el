@@ -4,7 +4,7 @@
 
 ;; Author: Vasilij Schneidermann <mail@vasilij.de>
 ;; URL: https://depp.brause.cc/nov.el
-;; Version: 0.4.0
+;; Version: 0.5.0
 ;; Package-Requires: ((esxml "0.3.6") (emacs "25.1"))
 ;; Keywords: hypermedia, multimedia, epub
 
